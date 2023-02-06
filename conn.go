@@ -42,7 +42,11 @@ type redisConn struct {
 }
 
 func (conn *redisConn) auth(password string) (err error) {
-	if err = conn.send("AUTH", password); err != nil {
+	var args []interface{}
+	for _, arg := range strings.Split(password, ":") {
+		args = append(args, arg)
+	}
+	if err = conn.send("AUTH", args...); err != nil {
 		conn.shutdown()
 		return
 	}
