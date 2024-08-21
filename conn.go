@@ -1,14 +1,15 @@
 package redis
 
 import (
-	"net"
-	"time"
 	"bufio"
-	"fmt"
-	"strconv"
-	"io"
 	"errors"
+	"fmt"
+	"io"
+	"net"
+	"strconv"
+	"strings"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -265,7 +266,12 @@ func (conn *redisConn) readReply() (interface{}, error) {
 			// return []byte{}, nil
 			return nil, nil
 		} else if n < -1 || err != nil {
-			return nil, fmt.Errorf("parse length failed: %v, line[0]: [%v], length: [%v]", err, rune(line[0]), n)
+			return nil, fmt.Errorf(
+				"parse length failed: %v, line[0]: [%v], length: [%v]",
+				err,
+				rune(line[0]),
+				n,
+			)
 		}
 
 		/*
@@ -283,15 +289,17 @@ func (conn *redisConn) readReply() (interface{}, error) {
 		 * return line, nil
 		 */
 
-		buf := make([]byte, n + 2)
+		buf := make([]byte, n+2)
 		x, err := io.ReadFull(conn.br, buf)
 		if err != nil {
 			return nil, err
 		}
 
-		if x < n || buf[n] != '\r' || buf[n + 1] != '\n' {
-			return nil, fmt.Errorf("invalid response: length[%v] != n[%v] or suffix != \r\n, line: %v",
-				len(buf), n, buf)
+		if x < n || buf[n] != '\r' || buf[n+1] != '\n' {
+			return nil, fmt.Errorf(
+				"invalid response: length[%v] != n[%v] or suffix != \r\n, line: %v",
+				len(buf), n, buf,
+			)
 		}
 
 		return buf[:n], nil
@@ -320,7 +328,6 @@ func (conn *redisConn) readReply() (interface{}, error) {
 	return nil, fmt.Errorf("invalid response: line[0]: %v", line[0])
 }
 
-
 // parseLen parses bulk string and array length.
 func parseLen(p []byte) (int, error) {
 	if len(p) == 0 {
@@ -336,7 +343,11 @@ func parseLen(p []byte) (int, error) {
 	for _, b := range p {
 		n *= 10
 		if b < '0' || b > '9' {
-			return -1, fmt.Errorf("invalid response: parseLen: parse character[%c] failed, data: %v", b, p)
+			return -1, fmt.Errorf(
+				"invalid response: parseLen: parse character[%c] failed, data: %v",
+				b,
+				p,
+			)
 		}
 		n += int(b - '0')
 	}
